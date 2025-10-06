@@ -45,7 +45,7 @@ jobs:
   publish-to-testpypi:
     name: Publish to TestPyPI
     needs: build
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     if: github.event_name == 'release' && github.event.action == 'published'
     environment:
       name: testpypi
@@ -67,7 +67,7 @@ jobs:
   publish-to-pypi:
     name: Publish to PyPI
     needs: build
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     if: github.event_name == 'release' && github.event.action == 'published'
     environment:
       name: pypi
