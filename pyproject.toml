@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyweboverlay"
+version = "0.1.0"
+description = "A Python package for creating simple local web overlays for streams and other needs"
+readme = "README.md"
+authors = [{ name = "chrisrca" }]
+license = { file = "LICENSE" }
+requires-python = "==3.9.*"
+dependencies = [
+    "setuptools",
+    "wheel",
+    "build",
+    "twine",
+    "pytest",
+]
+keywords = ["overlay", "web", "obs"]
+classifiers = [
+    "Programming Language :: Python :: 3.9",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[tool.setuptools]
+packages = ["pyweboverlay"]
+
+[project.urls]
+Repository = "https://github.com/chrisrca/pyweboverlay"
