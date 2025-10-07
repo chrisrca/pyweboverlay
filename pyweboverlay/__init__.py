@@ -9,6 +9,6 @@ __all__ = (
     "update",
 )
 
-__version__ = "1.0.3"
+__version__ = "1.0.4"
 
 from .core import PyWebOverlay, init, register, update
