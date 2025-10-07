@@ -41,7 +41,7 @@ class RLOverlay(Overlay):
 
 if __name__ == "__main__":
     # Initialize pyweboverlay and register custom overlay
-    pyweboverlay.init(port=5001, verbose=True)
+    pyweboverlay.init(port=5001, verbose=False)
     pyweboverlay.register(
         RLOverlay(),
         name="rloverlay",
