@@ -4,18 +4,16 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyweboverlay"
-version = "1.0.0"
+version = "1.0.1"
 description = "A Python package for creating simple local web overlays for streams and other needs"
 readme = "README.md"
 authors = [{ name = "chrisrca" }]
 license = { file = "LICENSE" }
 requires-python = "==3.9.*"
 dependencies = [
-    "setuptools",
-    "wheel",
-    "build",
-    "twine",
-    "pytest",
+    "Flask==3.1.2",
+    "flask-socketio==5.3.6",
+    "requests==2.32.5",
 ]
 keywords = ["overlay", "web", "obs"]
 classifiers = [
