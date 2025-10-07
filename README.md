@@ -59,7 +59,7 @@ Update an overlay with new data and emit to connected clients.
 Extend the `Overlay` base class and implement two required methods:
 
 ```python
-from pyweboverlay.core import Overlay
+from pyweboverlay import Overlay
 
 class CustomOverlay(Overlay):
     def get_data(self):
