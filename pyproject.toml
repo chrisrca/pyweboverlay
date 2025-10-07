@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyweboverlay"
-version = "1.0.2"
+version = "1.0.3"
 description = "A Python package for creating simple local web overlays for streams and other needs"
 readme = "README.md"
 authors = [{ name = "chrisrca" }]
