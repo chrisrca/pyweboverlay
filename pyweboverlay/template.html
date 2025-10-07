@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PyWebOverlay {{ name }}</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+    <style> body { background: transparent; color: black; font-family: Arial; } </style>
+</head>
+<body>
+    <h1>{{ name }} Overlay</h1>
+    <p>Data: <span id="data">Waiting...</span></p>
+    <script>
+        const socket = io('http://localhost:{{ port }}{{ namespace }}');
+        socket.on('update', data => {
+            document.getElementById('data').textContent = JSON.stringify(data);
+        });
+    </script>
+</body>
+</html>

@@ -1,11 +1,10 @@
 import threading
-import uuid
 import os
 import logging
 import time
 from flask import Flask, render_template_string, send_from_directory
-from flask_socketio import SocketIO, Namespace
-from abc import ABC, abstractmethod
+from flask_socketio import SocketIO
+from .overlay import Overlay, OverlayNamespace
 
 # Configure logging
 logger = logging.getLogger('pyweboverlay')
@@ -26,29 +25,6 @@ name_to_overlay = {}
 server_port = 5000
 verbose = True
 static_dirs = {}
-
-class Overlay(ABC):
-    """Base class for all overlays."""
-    def __init__(self):
-        self.id = str(uuid.uuid4())
-
-    @abstractmethod
-    def get_data(self):
-        pass
-
-    @abstractmethod
-    def update(self, data=None):
-        pass
-
-class OverlayNamespace(Namespace):
-    """SocketIO namespace for an overlay."""
-    def __init__(self, overlay, namespace):
-        super().__init__(namespace)
-        self.overlay = overlay
-
-    def on_connect(self):
-        """Send initial overlay data to client on connect."""
-        self.emit('update', self.overlay.get_data())
 
 class PyWebOverlay:
     @staticmethod
@@ -126,26 +102,10 @@ class PyWebOverlay:
             with open(template_file, 'r') as f:
                 template_str = f.read()
         else:
-            template_str = """
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>PyWebOverlay {{ name }}</title>
-                    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
-                    <style> body { background: transparent; color: white; font-family: Arial; } </style>
-                </head>
-                <body>
-                    <h1>{{ name }} Overlay</h1>
-                    <p>Data: <span id="data">Waiting...</span></p>
-                    <script>
-                        const socket = io('http://localhost:{{ port }}{{ namespace }}');
-                        socket.on('update', data => {
-                            document.getElementById('data').textContent = JSON.stringify(data);
-                        });
-                    </script>
-                </body>
-                </html>
-            """
+            # Load default template from file
+            template_path = os.path.join(os.path.dirname(__file__), 'template.html')
+            with open(template_path, 'r') as f:
+                template_str = f.read()
         
         def make_overlay_route(template, overlay_name, overlay_namespace):
             def route_func():
@@ -162,7 +122,7 @@ class PyWebOverlay:
             if verbose:
                 logger.info(f"Registered static directory for {name}: {static_dir}")
             
-            # Add overlay-specific static route
+            # Add overlay specific static route
             def make_static_route(static_directory, overlay_name):
                 def route_func(filename):
                     file_path = os.path.join(static_directory, filename)

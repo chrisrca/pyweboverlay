@@ -1,7 +1,7 @@
 import time
 import random
 import pyweboverlay
-from pyweboverlay.core import Overlay
+from pyweboverlay import Overlay
 
 def abbreviate_number(number):
     """Convert a number to a string with M, B, or T abbreviation."""
@@ -41,7 +41,7 @@ class RLOverlay(Overlay):
 
 if __name__ == "__main__":
     # Initialize pyweboverlay and register custom overlay
-    pyweboverlay.init(port=5001, verbose=False)
+    pyweboverlay.init(port=5001, verbose=True)
     pyweboverlay.register(
         RLOverlay(),
         name="rloverlay",

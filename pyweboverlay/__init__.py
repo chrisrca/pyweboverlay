@@ -7,8 +7,11 @@ __all__ = (
     "init",
     "register",
     "update",
+    "Overlay",
+    "OverlayNamespace",
 )
 
-__version__ = "1.0.4"
+__version__ = "1.0.5"
 
 from .core import PyWebOverlay, init, register, update
+from .overlay import Overlay, OverlayNamespace
