@@ -2,9 +2,7 @@ import threading
 import uuid
 import os
 import logging
-import sys
 import time
-from io import StringIO
 from flask import Flask, render_template_string, send_from_directory
 from flask_socketio import SocketIO, Namespace
 from abc import ABC, abstractmethod
@@ -18,7 +16,7 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 # Global app and socketio instances
-app = Flask(__name__)
+app = Flask(__name__, static_folder=None)
 socketio = SocketIO(app)
 
 # Registry for overlays
@@ -26,7 +24,8 @@ overlays = {}
 overlay_names = set()
 name_to_overlay = {}
 server_port = 5000
-verbose = True  # Global verbose flag
+verbose = True
+static_dirs = {}
 
 class Overlay(ABC):
     """Base class for all overlays."""
@@ -65,18 +64,13 @@ class PyWebOverlay:
         server_port = port
         globals()['verbose'] = verbose
 
-        # Configure Flask and SocketIO logging
         if not verbose:
-            # Suppress Flask/Werkzeug, SocketIO, and EngineIO logs
-            logging.getLogger('werkzeug').disabled = True  # Disable Werkzeug logger entirely
+            logging.getLogger('werkzeug').disabled = True
             logging.getLogger('socketio').setLevel(logging.ERROR)
             logging.getLogger('engineio').setLevel(logging.ERROR)
-            # Suppress pyweboverlay logs
             logger.setLevel(logging.ERROR)
-            # Suppress Flask's app startup message
             app.logger.disabled = True
             logging.getLogger('flask').setLevel(logging.ERROR)
-            # Override Flask's server banner function to suppress startup messages
             import flask.cli
             flask.cli.show_server_banner = lambda *args: None
         else:
@@ -86,22 +80,17 @@ class PyWebOverlay:
             logging.getLogger('werkzeug').disabled = False
 
         def run_server():
-            # Pass log_output=False to suppress Flask's default console output
             socketio.run(
                 app,
                 port=port,
                 debug=False,
                 use_reloader=False,
                 allow_unsafe_werkzeug=True,
-                log_output=verbose  # Only log to console if verbose=True
+                log_output=verbose
             )
 
-        # Start server in a daemon thread
         threading.Thread(target=run_server, daemon=True).start()
-        
-        # Give the server time to fully start before returning
         time.sleep(1)
-        
         if verbose:
             logger.info(f"PyWebOverlay server started at http://localhost:{port}")
 
@@ -163,24 +152,64 @@ class PyWebOverlay:
                 return render_template_string(template, name=overlay_name, namespace=overlay_namespace, port=server_port)
             return route_func
         
-        def make_static_route(static_directory):
-            def route_func(filename):
-                if verbose:
-                    logger.info(f"Attempting to serve static file: {static_directory}/{filename}")
-                return send_from_directory(static_directory, filename)
-            return route_func
-        
         overlay_route_func = make_overlay_route(template_str, name, namespace)
         overlay_route_func.__name__ = f'overlay_route_{name}'
         app.add_url_rule(f'/{name}', f'overlay_route_{name}', overlay_route_func)
         
         if static_dir:
             static_dir = os.path.abspath(static_dir)
+            static_dirs[name] = static_dir
             if verbose:
-                logger.info(f"Registering static route for absolute path: {static_dir}")
-            static_route_func = make_static_route(static_dir)
+                logger.info(f"Registered static directory for {name}: {static_dir}")
+            
+            # Add overlay-specific static route
+            def make_static_route(static_directory, overlay_name):
+                def route_func(filename):
+                    file_path = os.path.join(static_directory, filename)
+                    if os.path.exists(file_path):
+                        if verbose:
+                            logger.info(f"Serving static file from {overlay_name}: {file_path}")
+                        return send_from_directory(static_directory, filename)
+                    if verbose:
+                        logger.warning(f"Static file not found in {overlay_name}: {file_path}")
+                    return "File not found", 404
+                return route_func
+            
+            static_route_func = make_static_route(static_dir, name)
             static_route_func.__name__ = f'serve_static_{name}'
             app.add_url_rule(f'/{name}/static/<path:filename>', f'serve_static_{name}', static_route_func)
+        
+        # Register global /static/ route
+        # NOTE: Must be registered BEFORE overlay route to take precedence
+        if static_dir and not hasattr(app, 'global_static_registered'):
+            def global_static_route_func(filename):
+                v = globals().get('verbose', True)
+                logger.info(f"Global static route called for {filename}")
+                # Try to find the file in any registered static directory
+                for _, static_directory in static_dirs.items():
+                    file_path = os.path.join(static_directory, filename)
+                    if v:
+                        logger.info(f"Looking for /static/{filename} in {static_directory}: {file_path}")
+                        logger.info(f"File exists: {os.path.exists(file_path)}")
+                    if os.path.exists(file_path):
+                        if v:
+                            logger.info(f"Serving static file from /static/: {file_path}")
+                        return send_from_directory(static_directory, filename)
+                if v:
+                    logger.warning(f"Static file not found in /static/: {filename}")
+                    logger.warning(f"Searched in directories: {list(static_dirs.values())}")
+                return "File not found", 404
+            
+            global_static_route_func.__name__ = 'serve_global_static'
+            app.add_url_rule('/static/<path:filename>', 'serve_global_static', global_static_route_func)
+            app.global_static_registered = True
+            if verbose:
+                logger.info(f"Registered global /static/ route")
+                logger.info(f"Static directories available: {static_dirs}")
+                # List all routes to debug
+                logger.info("All registered routes:")
+                for rule in app.url_map.iter_rules():
+                    logger.info(f"  {rule.rule} -> {rule.endpoint}")
         
         if verbose:
             logger.info(f"Registered overlay {overlay_id} with namespace {namespace}")

@@ -1,0 +1,49 @@
+<html><head>
+    <title>rloverlay</title>
+    <style>
+        @font-face {
+            font-family: "Bourgeois W00 Medium";
+            src: url("https://db.onlinewebfonts.com/t/6dbb2ef49faa5474e0d891864e3a6c2b.eot");
+            src: url("https://db.onlinewebfonts.com/t/6dbb2ef49faa5474e0d891864e3a6c2b.eot?#iefix")format("embedded-opentype"),
+            url("https://db.onlinewebfonts.com/t/6dbb2ef49faa5474e0d891864e3a6c2b.woff2")format("woff2"),
+            url("https://db.onlinewebfonts.com/t/6dbb2ef49faa5474e0d891864e3a6c2b.woff")format("woff"),
+            url("https://db.onlinewebfonts.com/t/6dbb2ef49faa5474e0d891864e3a6c2b.ttf")format("truetype"),
+            url("https://db.onlinewebfonts.com/t/6dbb2ef49faa5474e0d891864e3a6c2b.svg#Bourgeois W00 Medium")format("svg");
+        }
+        #samples {
+            font-family: 'Bourgeois W00 Medium', sans-serif;
+            position: absolute; 
+            top: -4px; 
+            left: 121px;
+            color: white;
+            font-size: 36;
+        }
+        #hour {
+            font-family: 'Bourgeois W00 Medium', sans-serif;
+            position: absolute; 
+            top: 36px; 
+            left: 121px;
+            color: #43afff;
+            font-size: 28;
+        }
+    </style>
+  </head>
+  <body>
+    <div>
+        <img id="icon" src="static/pivot.png" width="83" height="83" style="position: absolute; top: 21px; left: 21px;">
+        <img id="bar" src="static/background.png" style="position: absolute; top: 10px; left: 10px;">
+        <p id="samples"></p>
+        <p id="hour"></p>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+    <script>
+        const socket = io('http://localhost:{{ port }}{{ namespace }}');
+        socket.on('update', data => {
+            const hourValue = parseInt(data.hour);
+            const hourText = hourValue === 1 ? 'hour' : 'hours';
+            
+            document.getElementById('samples').textContent = "Pivot BC (" + data.samples + " samples)";
+            document.getElementById('hour').textContent = "Train Time: "+ data.hour + " " + hourText;
+        });
+    </script>
+</body></html>
