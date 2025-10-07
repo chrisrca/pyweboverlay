@@ -65,27 +65,36 @@ class PyWebOverlay:
         server_port = port
         globals()['verbose'] = verbose
 
-        # Configure Flask and SocketIO logging early
+        # Configure Flask and SocketIO logging
         if not verbose:
-            # Suppress Flask/Werkzeug startup messages
-            logging.getLogger('werkzeug').setLevel(logging.ERROR)
+            # Suppress Flask/Werkzeug, SocketIO, and EngineIO logs
+            logging.getLogger('werkzeug').disabled = True  # Disable Werkzeug logger entirely
             logging.getLogger('socketio').setLevel(logging.ERROR)
             logging.getLogger('engineio').setLevel(logging.ERROR)
+            # Suppress pyweboverlay logs
+            logger.setLevel(logging.ERROR)
+            # Suppress Flask's app startup message
+            app.logger.disabled = True
+            logging.getLogger('flask').setLevel(logging.ERROR)
+            # Override Flask's server banner function to suppress startup messages
+            import flask.cli
+            flask.cli.show_server_banner = lambda *args: None
+        else:
+            logger.setLevel(logging.INFO)
+            app.logger.disabled = False
+            logging.getLogger('flask').setLevel(logging.INFO)
+            logging.getLogger('werkzeug').disabled = False
 
         def run_server():
-            if not verbose:
-                # Redirect stdout/stderr inside the server thread
-                original_stdout = sys.stdout
-                original_stderr = sys.stderr
-                sys.stdout = StringIO()
-                sys.stderr = StringIO()
-            
-            try:
-                socketio.run(app, port=port, debug=False, use_reloader=False, allow_unsafe_werkzeug=True)
-            finally:
-                if not verbose:
-                    sys.stdout = original_stdout
-                    sys.stderr = original_stderr
+            # Pass log_output=False to suppress Flask's default console output
+            socketio.run(
+                app,
+                port=port,
+                debug=False,
+                use_reloader=False,
+                allow_unsafe_werkzeug=True,
+                log_output=verbose  # Only log to console if verbose=True
+            )
 
         # Start server in a daemon thread
         threading.Thread(target=run_server, daemon=True).start()
