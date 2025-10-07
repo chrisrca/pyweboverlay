@@ -4,6 +4,7 @@ import logging
 import time
 from flask import Flask, render_template_string, send_from_directory
 from flask_socketio import SocketIO
+from importlib.resources import files
 from .overlay import Overlay, OverlayNamespace
 
 # Configure logging
@@ -102,9 +103,9 @@ class PyWebOverlay:
             with open(template_file, 'r') as f:
                 template_str = f.read()
         else:
-            # Load default template from file
-            template_path = os.path.join(os.path.dirname(__file__), 'template.html')
-            with open(template_path, 'r') as f:
+            # Load default template from package
+            template_path = files('pyweboverlay') / 'template.html'
+            with open(template_path) as f:
                 template_str = f.read()
         
         def make_overlay_route(template, overlay_name, overlay_namespace):
